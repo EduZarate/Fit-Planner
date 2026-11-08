@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Pesos por Aparato</title>
+<title>Fit Planner</title>
 <meta name="theme-color" content="#2346d8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Mis pesos">
+<meta name="apple-mobile-web-app-title" content="Fit Planner">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -36,7 +36,8 @@
   --warn: #a25a00;
   --warn-soft: #fbecd6;
   --danger: #b4232f;
-  --mach: #9aa6c4;
+  --mach: #a9b4d0;
+  --mach2: #6f7ca0;
   --move: #d9822b;
   --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -46,14 +47,14 @@
   :root:not([data-theme="light"]) {
     --bg: #0f131b; --surface: #181e2a; --ink: #e9edf5; --muted: #98a2b5; --line: #2a3242;
     --accent: #7d97ff; --accent-ink: #0d1430; --accent-soft: #1f2a4d;
-    --good: #5fd39a; --good-soft: #163527; --warn: #f1b35c; --warn-soft: #3a2a14; --danger: #ff7a84; --mach: #56627d; --move: #f1a24c;
+    --good: #5fd39a; --good-soft: #163527; --warn: #f1b35c; --warn-soft: #3a2a14; --danger: #ff7a84; --mach: #4a5676; --mach2: #8795ba; --move: #f1a24c;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f131b; --surface: #181e2a; --ink: #e9edf5; --muted: #98a2b5; --line: #2a3242;
   --accent: #7d97ff; --accent-ink: #0d1430; --accent-soft: #1f2a4d;
-  --good: #5fd39a; --good-soft: #163527; --warn: #f1b35c; --warn-soft: #3a2a14; --danger: #ff7a84; --mach: #56627d; --move: #f1a24c;
+  --good: #5fd39a; --good-soft: #163527; --warn: #f1b35c; --warn-soft: #3a2a14; --danger: #ff7a84; --mach: #4a5676; --mach2: #8795ba; --move: #f1a24c;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -86,10 +87,13 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-h
 .thumb { grid-row: 1 / span 2; width: 56px; height: 56px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; overflow: hidden; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb svg { width: 88%; height: 88%; }
-.ico .ps { stroke: var(--accent); stroke-width: 5.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.ico .pf { fill: var(--accent); }
-.ico .ms { stroke: var(--mach); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.ico .mf { fill: var(--mach); }
+.ico .bd { stroke: var(--accent); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.ico .hd { fill: var(--accent); }
+.ico .m1 { fill: var(--mach); }
+.ico .m2 { fill: var(--mach2); }
+.ico .s1 { stroke: var(--mach); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.ico .s2 { stroke: var(--mach2); stroke-width: 7; fill: none; stroke-linecap: round; }
+.ico .pl { stroke: var(--accent-soft); stroke-width: 1.1; fill: none; }
 .ico .ar { stroke: var(--move); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .tips { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
 .vidbtn { display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; height: 48px; border-radius: 12px; background: var(--ink); color: var(--bg); font-weight: 600; }
@@ -232,7 +236,7 @@ textarea.in { height: auto; min-height: 76px; padding: 10px 12px; resize: vertic
   <header class="top">
     <div class="titlerow">
       <div>
-        <h1>Mis pesos</h1>
+        <h1>Fit Planner</h1>
         <div class="status"><span class="dot" id="sdot"></span><span id="stext">Cargando…</span></div>
       </div>
       <div class="hdbtns"><button class="iconbtn" id="btnStats">📊 Progreso</button><button class="iconbtn" id="btnSettings" aria-label="Ajustes">⚙</button></div>
@@ -267,49 +271,62 @@ const PRESET = [
   ["Core", "Abdominales (crunch)"], ["Core", "Rotación de torso"]
 ];
 const LS_KEY = "pesos-aparato-v1";
-/* Ilustraciones propias 64×64: aparato en gris, persona en color, movimiento en naranja */
-const P = (d) => `<path class="ps" d="${d}"/>`;
-const H = (x, y) => `<circle class="pf" cx="${x}" cy="${y}" r="5.2"/>`;
-const MS = (d) => `<path class="ms" d="${d}"/>`;
-const MR = (x, y, w, h) => `<rect class="mf" x="${x}" y="${y}" width="${w}" height="${h}" rx="2.5"/>`;
-const MP = (d) => `<path class="mf" d="${d}"/>`;
-const MC = (x, y, r) => `<circle class="mf" cx="${x}" cy="${y}" r="${r}"/>`;
-function AR(x1, y1, x2, y2) {
-  const a = Math.atan2(y2 - y1, x2 - x1), L = 5.5, s = 0.55;
-  const p1 = [x2 - L * Math.cos(a - s), y2 - L * Math.sin(a - s)], p2 = [x2 - L * Math.cos(a + s), y2 - L * Math.sin(a + s)];
-  const f = (n) => n.toFixed(1);
-  return `<path class="ar" d="M${x1} ${y1}L${x2} ${y2}M${f(p1[0])} ${f(p1[1])}L${x2} ${y2}L${f(p2[0])} ${f(p2[1])}"/>`;
+/* Ilustraciones propias 64×64: aparato en gris (bastidor, almohadillas, pila de pesas), persona en azul con la posición inicial en tenue y la final en sólido, flecha naranja del movimiento */
+const pl = (a) => "M" + a.map((p) => p.join(" ")).join("L");
+const LB = (a, w) => `<path class="bd" style="stroke-width:${w}" d="${pl(a)}"/>`;
+const R = (c, x, y, w, h, r) => `<rect class="${c}" x="${x}" y="${y}" width="${w}" height="${h}" rx="${r ?? 2}"/>`;
+const SL = (a, w) => `<path class="s1" style="stroke-width:${w || 3}" d="${pl(a)}"/>`;
+const PD = (a) => `<path class="m2" d="${pl(a)}Z"/>`;
+const HEAD = (x, y) => `<circle class="hd" cx="${x}" cy="${y}" r="5.6"/>`;
+const GH = (arms) => `<g opacity=".3">${arms.map((a) => LB(a, 5.4)).join("")}</g>`;
+const ARMS = (arms) => arms.map((a) => LB(a, 5.4)).join("");
+const LEGS = (legs) => legs.map((a) => LB(a, 6.6)).join("");
+const TORSO = (a) => LB(a, 9.5);
+function STACK(x, y, h) {
+  let s = R("m1", x, y, 10, h, 2) + R("m2", x + 3, y - 3, 4, 4, 1);
+  for (let k = 5; k < h - 2; k += 5) s += `<path class="pl" d="M${x + 1.5} ${y + k}H${x + 8.5}"/>`;
+  return s;
 }
-const SEAT = MR(9, 10, 6, 32) + MR(9, 40, 27, 6) + MS("M21 46V58M10 58h24");
-const SIT = (shin) => H(22, 11) + P("M21 18V38" + (shin || "H36L38 54h4"));
-const ICONS = {
-  press: SEAT + MS("M54 6V58M46 58h14M42 23h12") + MR(39, 16, 5, 14) + SIT() + P("M22 24H40") + AR(46, 12, 58, 12),
-  incline: SEAT + MS("M54 6V58M46 58h14M40 13l14 4") + MR(36, 6, 5, 13) + SIT() + P("M22 23L38 12") + AR(44, 10, 54, 2),
-  shoulder: SEAT + MS("M50 2V58M42 58h14M36 6h14") + MR(25, 3, 12, 5) + SIT() + P("M22 22L31 22L31 9") + AR(58, 28, 58, 12),
-  pulldown: SEAT + MS("M56 2V58M48 58h14M33 4V2H56") + MR(10, 4, 46, 4) + MR(30, 31, 12, 5) + SIT() + P("M22 21L30 15L31 9") + AR(60, 14, 60, 30),
-  row: SEAT + MS("M58 14V58M50 58h12M38 25H58") + MR(35, 19, 5, 13) + MR(42, 44, 5, 14) + SIT("H36L42 50") + P("M22 24H36") + AR(52, 12, 40, 12),
-  curl: SEAT + MS("M52 12V58M44 58h14M40 12h12") + MP("M24 33L42 25L44 30L26 38Z") + MR(34, 7, 9, 5) + SIT() + P("M22 23L37 28L38 13") + AR(50, 34, 50, 20),
-  triceps: MS("M40 4V60M34 60h12M40 9V30") + `<circle class="ms" cx="40" cy="7" r="3"/>` + MR(36, 30, 8, 4) + H(24, 10) + P("M24 17V37M24 37L21 58M24 37L29 58") + P("M25 20L27 31L38 33") + AR(52, 18, 52, 36),
-  fly: MR(25, 6, 14, 38) + MR(16, 42, 32, 5) + MS("M32 47V58M20 58h24") + MR(12, 8, 7, 16) + MR(45, 8, 7, 16) + H(32, 12) + P("M32 19V40M28 42L22 46V56M36 42L42 46V56") + P("M29 23L16 23L16 12M35 23L48 23L48 12") + AR(4, 32, 13, 32) + AR(60, 32, 51, 32),
-  reardelt: MR(26, 14, 12, 30) + MR(16, 42, 32, 5) + MS("M32 47V58M20 58h24") + MR(5, 16, 5, 12) + MR(54, 16, 5, 12) + H(32, 9) + P("M32 16V40M28 42L22 46V56M36 42L42 46V56") + P("M29 22H9M35 22H55") + AR(16, 34, 4, 34) + AR(48, 34, 60, 34),
-  lateral: MR(25, 10, 14, 34) + MR(16, 42, 32, 5) + MS("M32 47V58M20 58h24") + MR(8, 10, 8, 6) + MR(48, 10, 8, 6) + H(32, 11) + P("M32 18V40M28 42L22 46V56M36 42L42 46V56") + P("M29 22L14 16M35 22L50 16") + AR(8, 34, 8, 22) + AR(56, 34, 56, 22),
-  pullup: MR(6, 3, 52, 5) + MS("M8 8V60M56 8V60M32 50V60") + MR(20, 46, 24, 5) + H(32, 15) + P("M29 22L22 8M35 22L42 8") + P("M32 22V38L27 46M32 38L37 46") + AR(50, 44, 50, 28),
-  dips: MS("M8 30V60M56 30V60M32 50V60") + MR(4, 26, 16, 5) + MR(44, 26, 16, 5) + MR(20, 46, 24, 5) + H(32, 9) + P("M29 17L16 21L14 27M35 17L48 21L50 27") + P("M32 16V38L27 46M32 38L37 46") + AR(58, 22, 58, 8),
-  legpress: MP("M4 30L20 52L26 47L10 25Z") + MS("M20 52L20 60M8 60h50M50 40L54 60") + MP("M42 16L56 30L51 35L37 21Z") + H(10, 19) + P("M14 26L24 44L34 28L44 26") + AR(50, 14, 59, 5),
-  legext: SEAT + MS("M40 46L46 58") + MC(53, 31, 4.5) + SIT("H36L52 29") + P("M22 24L30 30") + AR(58, 48, 60, 36),
-  legcurl: SEAT + MR(26, 31, 16, 5) + MC(29, 55, 4.5) + SIT("H36L31 52") + P("M22 24L30 30") + AR(46, 46, 38, 58),
-  calf: MS("M48 4V60M40 60h14M33 14h15") + MR(18, 14, 16, 5) + MR(28, 54, 16, 5) + H(26, 8) + P("M26 20V38L27 52L34 55") + P("M25 20L19 26") + AR(56, 52, 56, 38),
-  squat: MS("M8 2V62M56 2V62M2 62h60") + MR(4, 17, 56, 4) + H(32, 10) + P("M30 21L22 19M34 21L42 19") + P("M32 18V36L24 44L26 58M32 36L40 44L38 58") + AR(60, 52, 60, 36),
-  abd: MR(25, 6, 14, 34) + MR(16, 38, 32, 5) + MS("M32 43V58M20 58h24") + MR(6, 44, 6, 12) + MR(52, 44, 6, 12) + H(32, 10) + P("M32 17V36M29 38L15 46V58M35 38L49 46V58") + AR(14, 32, 4, 32) + AR(50, 32, 60, 32),
-  add: MR(25, 6, 14, 34) + MR(16, 38, 32, 5) + MS("M32 43V58M20 58h24") + MR(18, 44, 6, 12) + MR(40, 44, 6, 12) + H(32, 10) + P("M32 17V36M29 38L15 46V58M35 38L49 46V58") + AR(2, 32, 12, 32) + AR(62, 32, 52, 32),
-  glute: MS("M50 6V60M42 60h16M44 14h6") + MP("M38 14L44 12L48 26L42 28Z") + MR(26, 56, 12, 4) + H(52, 8) + P("M46 15L30 28L32 55") + P("M30 28L16 22L8 30") + P("M44 17L46 26") + AR(20, 12, 8, 6),
-  crunch: SEAT + MS("M50 4V58M42 58h14M38 10h12") + MR(30, 12, 9, 5) + H(31, 7) + P("M21 38Q21 24 28 16") + P("H36L38 54h4".replace("H", "M21 39H")) + P("M27 18L35 15") + AR(48, 22, 44, 36),
-  rotation: MR(25, 10, 14, 34) + MR(16, 42, 32, 5) + MS("M32 47V58M20 58h24") + MR(18, 20, 28, 5) + H(32, 11) + P("M32 18V40M28 42L22 46V56M36 42L42 46V56") + `<path class="ar" d="M10 30A24 12 0 0 0 54 30"/>` + AR(50.5, 33.5, 54, 30),
-  backext: MR(9, 40, 27, 6) + MS("M21 46V58M10 58h24") + MP("M4 14L10 12L16 26L10 28Z") + MR(36, 48, 6, 10) + H(10, 6) + P("M21 38L13 18") + P("M21 39H34L38 54h4") + P("M14 22L22 20") + AR(30, 14, 22, 4),
-  cable: MS("M6 2V62M58 2V62") + `<circle class="ms" cx="6" cy="10" r="3"/><circle class="ms" cx="58" cy="10" r="3"/>` + MS("M8 12L26 34M56 12L38 34") + H(32, 11) + P("M32 18V38L27 58M32 38L37 58") + P("M30 22L26 34M34 22L38 34") + AR(14, 40, 22, 40) + AR(50, 40, 42, 40),
-  generic: MR(6, 20, 6, 24) + MR(14, 16, 6, 32) + MR(44, 16, 6, 32) + MR(52, 20, 6, 24) + MR(20, 29, 24, 6)
-};
+function AR(x1, y1, x2, y2) {
+  const a = Math.atan2(y2 - y1, x2 - x1), n = 5.6, s = 0.55, f = (v) => v.toFixed(1);
+  return `<path class="ar" d="M${x1} ${y1}L${x2} ${y2}M${f(x2 - n * Math.cos(a - s))} ${f(y2 - n * Math.sin(a - s))}L${x2} ${y2}L${f(x2 - n * Math.cos(a + s))} ${f(y2 - n * Math.sin(a + s))}"/>`;
+}
+/* base de máquina sentada, mirando a la derecha */
+const SEATED = (back) => (back === false ? "" : R("m2", 8, 12, 6, 28, 3)) + R("m2", 8, 38, 28, 6, 3) + R("m1", 18, 44, 5, 14, 1) + R("m1", 6, 58, 34, 3.5, 1.7);
+const SIT = { head: [21, 12], torso: [[20, 38], [20, 21]], legs: [[[20, 38], [36, 38], [38, 57]]] };
+const SITP = HEAD(...SIT.head) + TORSO(SIT.torso) + LEGS(SIT.legs);
+/* figura de frente sentada */
+const FSIT = LEGS([[[32, 40], [24, 46], [24, 58]], [[32, 40], [40, 46], [40, 58]]]) + TORSO([[32, 40], [32, 21]]) + HEAD(32, 12);
+const FSTAND = LEGS([[[32, 38], [27, 58]], [[32, 38], [37, 58]]]) + TORSO([[32, 38], [32, 21]]) + HEAD(32, 12);
+const FBASE = R("m2", 25, 6, 14, 36, 4) + R("m2", 16, 40, 32, 6, 3) + R("m1", 29, 46, 6, 12, 1) + R("m1", 18, 58, 28, 3.5, 1.7);
 
+const ICONS = {
+  press: STACK(52, 8, 40) + R("m1", 44, 22, 9, 4, 1) + SEATED() + GH([[[20, 23], [27, 30], [31, 24]]]) + SITP + ARMS([[[20, 23], [32, 24], [45, 24]]]) + AR(36, 14, 48, 14),
+  incline: STACK(52, 8, 40) + R("m1", 43, 8, 10, 4, 1) + SEATED() + GH([[[20, 22], [27, 28], [30, 22]]]) + SITP + ARMS([[[20, 22], [31, 18], [43, 10]]]) + AR(36, 26, 46, 20),
+  shoulder: STACK(52, 10, 38) + R("m1", 28, 2, 26, 4, 1) + SEATED() + GH([[[20, 22], [28, 25], [28, 14]]]) + SITP + ARMS([[[20, 22], [25, 14], [28, 5]]]) + AR(40, 24, 40, 12),
+  pulldown: STACK(52, 10, 38) + R("m1", 20, 0, 34, 4, 1.5) + SL([[30, 4], [30, 12]], 1.6) + SEATED() + PD([[28, 30], [40, 30], [40, 36], [28, 36]]) + GH([[[20, 22], [26, 12], [30, 4]]]) + SITP + ARMS([[[20, 22], [29, 30], [33, 20]]]) + AR(46, 8, 46, 24),
+  row: STACK(52, 10, 38) + R("m2", 27, 12, 6, 24, 3) + SEATED(false) + SL([[44, 25], [52, 25]], 1.6) + GH([[[20, 24], [31, 25], [43, 25]]]) + SITP + ARMS([[[20, 24], [14, 30], [30, 27]]]) + AR(46, 14, 34, 14),
+  curl: STACK(54, 10, 38) + SEATED() + PD([[22, 24], [36, 30], [34, 36], [20, 30]]) + GH([[[20, 22], [33, 31], [44, 40]]]) + SITP + ARMS([[[20, 22], [33, 31], [37, 19]]]) + AR(48, 38, 48, 22),
+  triceps: STACK(50, 8, 44) + SL([[44, 5], [34, 6]], 1.6) + SL([[44, 5], [44, 6]], 1.6) + SL([[34, 6], [34, 24]], 1.6) + LEGS([[[22, 36], [19, 58]], [[22, 36], [27, 58]]]) + TORSO([[22, 36], [22, 20]]) + HEAD(22, 11) + R("m1", 14, 58, 20, 3.5, 1.7) + GH([[[22, 21], [27, 30], [34, 24]]]) + ARMS([[[22, 21], [27, 30], [33, 41]]]) + AR(42, 28, 42, 44),
+  fly: FBASE + R("m2", 6, 9, 6, 16, 3) + R("m2", 52, 9, 6, 16, 3) + FSIT + GH([[[26, 23], [11, 24], [9, 12]], [[38, 23], [53, 24], [55, 12]]]) + ARMS([[[26, 23], [17, 24], [16, 13]], [[38, 23], [47, 24], [48, 13]]]) + AR(4, 36, 14, 36) + AR(60, 36, 50, 36),
+  reardelt: FBASE + R("m2", 3, 15, 6, 14, 3) + R("m2", 55, 15, 6, 14, 3) + FSIT + GH([[[26, 23], [18, 26], [10, 25]], [[38, 23], [46, 26], [54, 25]]]) + ARMS([[[26, 23], [14, 22], [6, 22]], [[38, 23], [50, 22], [58, 22]]]) + AR(18, 36, 6, 36) + AR(46, 36, 58, 36),
+  lateral: FBASE + R("m2", 6, 11, 8, 6, 3) + R("m2", 50, 11, 8, 6, 3) + FSIT + GH([[[26, 23], [18, 31], [14, 38]], [[38, 23], [46, 31], [50, 38]]]) + ARMS([[[26, 23], [18, 18], [10, 14]], [[38, 23], [46, 18], [54, 14]]]) + AR(5, 40, 5, 26) + AR(59, 40, 59, 26),
+  pullup: R("m1", 6, 1, 52, 4, 2) + R("m1", 6, 1, 4, 59, 1.5) + R("m1", 54, 1, 4, 59, 1.5) + R("m2", 22, 46, 20, 5, 2) + R("m1", 30, 51, 4, 9, 1) + GH([[[28, 24], [24, 32], [26, 38]], [[36, 24], [40, 32], [38, 38]]]) + LEGS([[[32, 38], [28, 45]], [[32, 38], [36, 45]]]) + TORSO([[32, 38], [32, 22]]) + HEAD(32, 14) + ARMS([[[28, 23], [22, 13], [20, 5]], [[36, 23], [42, 13], [44, 5]]]) + AR(51, 42, 51, 24),
+  dips: R("m1", 8, 28, 4, 32, 1.5) + R("m1", 52, 28, 4, 32, 1.5) + R("m2", 3, 24, 16, 5, 2.5) + R("m2", 45, 24, 16, 5, 2.5) + R("m2", 22, 46, 20, 5, 2) + R("m1", 30, 51, 4, 9, 1) + LEGS([[[32, 36], [28, 45]], [[32, 36], [36, 45]]]) + TORSO([[32, 36], [32, 18]]) + HEAD(32, 10) + GH([[[27, 20], [22, 30], [14, 26]], [[37, 20], [42, 30], [50, 26]]]) + ARMS([[[27, 20], [20, 22], [13, 25]], [[37, 20], [44, 22], [51, 25]]]) + AR(58, 22, 58, 8),
+  legpress: R("m1", 6, 58, 54, 3.5, 1.7) + `<path class="s2" d="M5 28L22 52"/>` + `<path class="s2" style="stroke-width:5" d="M26 54H42"/>` + `<path class="s2" d="M44 16L56 34"/>` + SL([[24, 58], [24, 54]], 3) + LEGS([[[22, 48], [34, 36], [44, 30]]]) + TORSO([[10, 32], [22, 48]]) + HEAD(7, 24) + ARMS([[[11, 34], [16, 40]]]) + AR(32, 20, 42, 10),
+  legext: SEATED() + R("m2", 8, 38, 28, 6, 3) + SL([[40, 44], [46, 58]], 3) + `<circle class="m2" cx="53" cy="35" r="4.6"/>` + GH([[[36, 38], [38, 56]]]) + HEAD(21, 12) + TORSO(SIT.torso) + LB([[20, 38], [36, 38], [52, 34]], 6.6) + ARMS([[[20, 23], [28, 30]]]) + AR(58, 50, 60, 36),
+  legcurl: SEATED() + R("m2", 26, 31, 16, 5, 2.5) + `<circle class="m2" cx="31" cy="55" r="4.6"/>` + HEAD(21, 12) + TORSO(SIT.torso) + GH([[[20, 38], [36, 38], [42, 56]]]) + LB([[20, 38], [36, 38], [30, 54]], 6.6) + ARMS([[[20, 23], [28, 30]]]) + AR(46, 50, 38, 58),
+  calf: R("m1", 48, 2, 4, 59, 1.5) + R("m2", 26, 12, 20, 5, 2.5) + R("m1", 24, 56, 20, 4, 2) + HEAD(27, 7) + LB([[27, 20], [27, 38]], 9.5) + LEGS([[[27, 38], [28, 50], [35, 55]]]) + ARMS([[[27, 22], [34, 24]]]) + R("m2", 22, 54, 6, 3, 1) + AR(56, 52, 56, 38),
+  squat: R("m1", 4, 1, 4, 60, 1.5) + R("m1", 56, 1, 4, 60, 1.5) + R("m1", 2, 60, 60, 3, 1.5) + R("m2", 4, 18, 56, 5, 2.5) + R("m2", 8, 16, 4, 9, 2) + R("m2", 52, 16, 4, 9, 2) + HEAD(32, 11) + LB([[32, 21], [32, 36]], 9.5) + LEGS([[[32, 36], [23, 44], [25, 59]], [[32, 36], [41, 44], [39, 59]]]) + ARMS([[[27, 22], [20, 20]], [[37, 22], [44, 20]]]) + AR(61, 50, 61, 32),
+  abd: FBASE + R("m2", 5, 42, 6, 14, 3) + R("m2", 53, 42, 6, 14, 3) + FSIT + AR(20, 32, 8, 32) + AR(44, 32, 56, 32) + GH([[[26, 23], [22, 30]], [[38, 23], [42, 30]]]),
+  add: FBASE + R("m2", 15, 42, 6, 14, 3) + R("m2", 43, 42, 6, 14, 3) + FSIT + AR(5, 32, 15, 32) + AR(59, 32, 49, 32),
+  glute: R("m1", 6, 58, 54, 3.5, 1.7) + R("m1", 48, 2, 4, 58, 1.5) + R("m2", 4, 22, 28, 6, 3) + PD([[40, 12], [47, 12], [47, 24], [40, 24]]) + HEAD(51, 8) + LB([[48, 18], [44, 30]], 9.5) + LB([[44, 30], [28, 34], [10, 46]], 6.6) + LB([[44, 30], [41, 46], [43, 58]], 6.6) + ARMS([[[47, 20], [42, 22]]]) + AR(12, 30, 8, 18),
+  crunch: SEATED() + R("m2", 28, 10, 8, 5, 2.5) + HEAD(31, 6) + LB([[20, 38], [22, 28], [28, 18]], 9.5) + LEGS([[[20, 38], [36, 38], [38, 57]]]) + ARMS([[[26, 21], [31, 16]]]) + AR(46, 20, 44, 34) + GH([[[20, 38], [20, 21]]]),
+  rotation: FBASE + R("m2", 16, 20, 32, 5, 2.5) + FSIT + `<path class="ar" d="M8 28A24 11 0 0 0 56 28"/><path class="ar" d="M52.2 31.6L56 28L55 22.8"/>`,
+  backext: R("m2", 6, 38, 30, 6, 3) + R("m1", 18, 44, 5, 14, 1) + R("m1", 6, 58, 34, 3.5, 1.7) + PD([[2, 14], [10, 12], [14, 28], [6, 30]]) + R("m2", 36, 46, 5, 10, 2) + GH([[[20, 38], [20, 21]]]) + HEAD(9, 6) + LB([[20, 38], [13, 21]], 9.5) + LEGS([[[20, 38], [36, 38], [40, 56]]]) + ARMS([[[15, 22], [22, 20]]]) + AR(30, 16, 22, 5),
+  cable: R("m1", 4, 1, 4, 60, 1.5) + R("m1", 56, 1, 4, 60, 1.5) + `<circle class="m2" cx="6" cy="8" r="3.4"/><circle class="m2" cx="58" cy="8" r="3.4"/>` + SL([[8, 10], [26, 34]], 1.6) + SL([[56, 10], [38, 34]], 1.6) + HEAD(32, 11) + LB([[32, 21], [32, 38]], 9.5) + LEGS([[[32, 38], [27, 58]], [[32, 38], [37, 58]]]) + ARMS([[[27, 23], [25, 30], [26, 35]], [[37, 23], [39, 30], [38, 35]]]) + GH([[[27, 23], [17, 28], [10, 24]], [[37, 23], [47, 28], [54, 24]]]) + AR(14, 44, 22, 44) + AR(50, 44, 42, 44),
+  generic: R("m2", 5, 20, 7, 24, 3) + R("m2", 13, 15, 7, 34, 3) + R("m2", 44, 15, 7, 34, 3) + R("m2", 52, 20, 7, 24, 3) + R("m1", 20, 29, 24, 6, 2)
+};
 const ICON_RULES = [
   ["deltoides posterior|rear delt", "reardelt"], ["jalon|pulldown", "pulldown"], ["fondo|dip", "dips"], ["dominada|pull ?up", "pullup"],
   ["femoral|leg curl", "legcurl"], ["triceps", "triceps"], ["curl|biceps", "curl"], ["remo|row", "row"],
@@ -1216,7 +1233,7 @@ connect();
 
 <script>
 if ("serviceWorker" in navigator && location.protocol === "https:") {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=3390e4e5ad").catch(() => {}));
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js?v=3cec0872c3").catch(() => {}));
 }
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
 </script>

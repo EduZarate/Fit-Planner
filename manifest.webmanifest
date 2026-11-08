@@ -1,6 +1,6 @@
 {
-  "name": "Pesos por Aparato",
-  "short_name": "Mis pesos",
+  "name": "Fit Planner",
+  "short_name": "Fit Planner",
   "lang": "es",
   "start_url": "./",
   "scope": "./",
